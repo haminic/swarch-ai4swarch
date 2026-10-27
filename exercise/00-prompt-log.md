@@ -11,10 +11,10 @@
 
 | # | งาน / run | agent + โมเดล | ข้อความที่ส่ง (ย่อ) | ไฟล์ที่ agent อ่าน | อยู่ในขอบเขตหลักฐานที่อนุญาตหรือไม่ | มีประโยชน์ (1–5) | หมายเหตุ |
 |---|---|---|---|---|---|---|---|
-| 1 | 1-A | | `prompts/1-…` run A | | | | |
-| 2 | 1-B | | `prompts/1-…` run B | | | | |
-| 3 | 2-a | | `prompts/2-…` run a | | | | |
-| 4 | 2-b | | `prompts/2-…` run b | | | | |
-| 5 | 3 | | `prompts/3-…` | | | | |
+| 1 | 1-A | Antigravitiy Gemini 3.8 Flash | `prompts/1-…` run A | `1-recover-architecture.md`, `demo.proto` | อยู่ | 4 | |
+| 2 | 1-B | Antigravitiy Gemini 3.8 Flash | `prompts/1-…` run B | `1-recover-architecture.md`, `demo.proto`, `adservice.yaml`, `cartservice.yaml`, `checkoutservice.yaml`, `currencyservice.yaml`, `emailservice.yaml`, `frontend.yaml`, `kustomization.yaml`, `loadgenerator.yaml`, `paymentservice.yaml`, `productcatalogservice.yaml`, `recommendationservice.md`, `shippingservice.yaml`, `README.md` | อยู่ | 4 | |
+| 3 | 2-a | Antigravitiy Gemini 3.8 Flash | `prompts/2-…` run a | `2-write-adr.md` and `template.md` | | | |
+| 4 | 2-b | Antigravitiy Gemini 3.8 Flash | `prompts/2-…` run b | `2-write-adr.md`, `template.md`, `scenario.md`, `0001-use-redis-for-cart-storage.md`, `main.go` | | | |
+| 5 | 3 | Antigravitiy Gemini 3.8 Flash | `prompts/3-…` | | | | |
 | 6 | | | | | | | |
 | 7 | | | | | | | |
