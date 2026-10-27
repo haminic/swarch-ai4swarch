@@ -35,10 +35,10 @@ language: Thai
 
 | เกณฑ์ | Run a | Run b |
 |---|---|---|
-| ใช้ตัวเลขจาก scenario หรือไม่ (latency, ช่วงพีก, ข้อจำกัดของ MailFast) | | |
-| ทางเลือกที่พิจารณา (ระบุ) | | |
-| จัดการแต้มสะสมแบบ "ครั้งเดียวเท่านั้น" และ rate limit ของ MailFast หรือไม่ อย่างไร | | |
-| มีสิ่งที่แต่งขึ้นเองหรือไม่ (ตัวเลข เครื่องมือ หรือข้อเท็จจริงที่ไม่มีใน scenario) | | |
+| ใช้ตัวเลขจาก scenario หรือไม่ (latency, ช่วงพีก, ข้อจำกัดของ MailFast) | ไม่ใช้เลย | ใช้ |
+| ทางเลือกที่พิจารณา (ระบุ) | เป็นรูปแบบเชิงสถาปัตยกรรมทั่วไป (Generic Patterns): 1. Synchronous Direct RPC/HTTP Orchestration, 2. Asynchronous Publish-Subscribe Event Broker (ไม่ระบุเทคโนโลยี), 3. Asynchronous Centralized Task Queue / Job Worker | เป็นเทคโนโลยีและกลไกที่เจาะจงกับระบบจริง: 1. Direct synchronous / parallel gRPC calls from checkoutservice (อิงโค้ด gRPC เดิม), 2. Asynchronous event-driven publish-subscribe with RabbitMQ (อิงทักษะทีมและโจทย์ K8s), 3. Distributed event streaming with Apache Kafka (นำมาเปรียบเทียบข้อดีข้อเสียกับขนาดทีม) |
+| จัดการแต้มสะสมแบบ "ครั้งเดียวเท่านั้น" และ rate limit ของ MailFast หรือไม่ อย่างไร | ระบุเพียงหลักการกว้างๆ ในระดับ Mitigation: แนะนำให้ทำ idempotent consumer โดยใช้ order_id แต่ไม่มีรายละเอียดระดับ implementation/database, แนะนำ rate-limited consumers ร่วมกับ exponential backoff และ Dead-Letter Queue (DLQ) แต่ไม่ทราบตัวเลขขีดจำกัดจริง | จัดการอย่างเป็นรูปธรรมและคำนวณเชิงปริมาณ: แต้มสะสม: ออกแบบให้ loyaltyservice เก็บ order_id ลง database table ด้วย unique constraint เพื่อการันตี exactly-once ภายใต้กรอบเวลา 1 นาที, Rate limit: กำหนด QoS prefetch limit ของคิวให้ดึงไม่เกิน 50 emails/s, คำนวณ queue backlog ช่วงพีก (เข้า 200/s ดึงออก 50/s เกิดค้าง 150/s รวม 120,000 ข้อความใน 10 นาที ใช้เวลา drain 40 นาที) |
+| มีสิ่งที่แต่งขึ้นเองหรือไม่ (ตัวเลข เครื่องมือ หรือข้อเท็จจริงที่ไม่มีใน scenario) | มีข้อสมมติฐานในเชิง structure เพิ่มเติม | ไม่มี |
 
 ## รับผิดชอบ ADR ฉบับสุดท้ายของตัวเอง
 
@@ -51,6 +51,4 @@ language: Thai
 
 | # | สิ่งที่เปลี่ยนจากร่างของ AI | เหตุผล |
 |---|---|---|
-| 1 | | |
-| 2 | | |
-| 3 | | |
+| 1 | ระบุเทคโนโลยีฐานข้อมูลที่ชัดเจนสำหรับ loyaltyservice แทนการทิ้งไว้เป็น Open Question | ร่าง 2b ทิ้งคำถามเรื่อง datastore ของ loyaltyservice ไว้ใน Open Questions ทั้งที่ระบบจำเป็นต้องใช้ Transactional Database (เช่น PostgreSQL หรือ Cloud Spanner) เพื่อทำ ACID transaction และ enforce order_id UNIQUE constraint สำหรับการการันตี Exactly-once loyalty points |
