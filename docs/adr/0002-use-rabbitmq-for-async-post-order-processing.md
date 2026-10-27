@@ -55,11 +55,11 @@ Upon completing payment and shipping in `checkoutservice.PlaceOrder`, `checkouts
 
 Individual durable queues will bind to the exchange for each business capability:
 - `email-service-queue`: `emailservice` consumes messages with a QoS prefetch limit tuned to process at ≤ 50 emails/s to respect MailFast's rate limit, employing exponential backoff and a dead-letter exchange (DLX) for failed calls.
-- `loyalty-service-queue`: `loyaltyservice` consumes events and awards points within seconds (< 1 minute requirement), recording processed `order_id` values to ensure exactly-once crediting.
+- `loyalty-service-queue`: `loyaltyservice` consumes events and awards points within seconds (< 1 minute requirement), persisting loyalty points and deduplication records in a dedicated PostgreSQL transactional database using an ACID transaction and a `UNIQUE` constraint on `order_id` to guarantee exactly-once processing.
 - `analytics-service-queue`: A marketing worker ingests events into the marketing analytics datastore.
 - Future services (SMS, fraud scoring, recommendations) will declare and bind new queues to the existing exchange with zero modifications to `checkoutservice`.
 
-RabbitMQ will be deployed as an open-source high-availability cluster (Quorum Queues) on Kubernetes.
+RabbitMQ will be deployed as an open-source high-availability cluster (Quorum Queues) on Kubernetes. For `loyaltyservice`, PostgreSQL will be deployed as an open-source database on Kubernetes, adhering to the team's preference for self-hosted infrastructure.
 
 ## Consequences
 
@@ -77,7 +77,7 @@ RabbitMQ will be deployed as an open-source high-availability cluster (Quorum Qu
   - *Risk:* Large backlog in `email-service-queue` during 11.11 peak (200 orders/s arriving vs 50 emails/s processed creates an accumulating queue of 150 msg/s).
     *Mitigation:* A 10-minute 200 orders/s surge generates 120,000 messages, requiring 40 minutes to drain at 50 emails/s. RabbitMQ easily buffers hundreds of thousands of messages on disk without memory exhaustion. Configure alert thresholds for consumer lag and inform marketing/customer support of peak email delivery delays.
   - *Risk:* Duplicate message processing causing customers to receive double loyalty points.
-    *Mitigation:* Require `loyaltyservice` to enforce deduplication by storing `order_id` in a database table with a unique constraint as part of the loyalty credit transaction.
+    *Mitigation:* Require `loyaltyservice` to enforce deduplication by storing `order_id` in a PostgreSQL database table with a `UNIQUE` constraint on `order_id` within an ACID transaction when crediting loyalty points.
 
 ## Validation
 
@@ -89,7 +89,6 @@ RabbitMQ will be deployed as an open-source high-availability cluster (Quorum Qu
 
 ## Open questions
 
-- What data store will `loyaltyservice` use to persist loyalty balances and maintain the unique `order_id` record for idempotency?
 - What are the SLA and invocation timing requirements for the upcoming fraud scoring service? (e.g. Does fraud scoring need to run synchronously prior to payment capture, or can it run asynchronously post-order as an audit/flagging mechanism?)
 - What is the retention and alert escalation policy for the dead-letter queue (DLQ) when MailFast permanently rejects an email (e.g. invalid recipient address)?
 - What schema format (e.g. Protocol Buffers, CloudEvents JSON) is preferred for the `OrderPlaced` message payload across current and future post-order consumers?
